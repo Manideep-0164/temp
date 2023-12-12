@@ -1,0 +1,9 @@
+const taskDate = new Date(); // Replace with your actual task date
+const formattedDate = new Intl.DateTimeFormat('en-US', {
+  month: 'short',
+  day: 'numeric',
+  hour: 'numeric',
+  minute: 'numeric',
+}).format(taskDate);
+
+console.log(formattedDate);
