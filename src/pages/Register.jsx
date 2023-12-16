@@ -1,6 +1,6 @@
-import React, { useEffect, useState, useContext } from "react";
-import { Navigate } from "react-router-dom";
-import { Box, Heading, Input, Button } from "@chakra-ui/react";
+import { useState, useContext } from "react";
+import { Navigate, Link } from "react-router-dom";
+import { Box, Heading, Input, Button, Text } from "@chakra-ui/react";
 
 import { auth, db } from "../configs/firebase";
 import { collection, addDoc, query, where, getDocs } from "firebase/firestore";
@@ -75,8 +75,6 @@ const Register = () => {
       const provider = new GoogleAuthProvider();
       const { user } = await signInWithPopup(auth, provider);
 
-      // console.log(user);
-
       addUserToDatabase(user.uid, {
         name: user.displayName,
         photoURL: user.photoURL,
@@ -135,13 +133,32 @@ const Register = () => {
             onChange={(e) => setPassword(e.target.value)}
           />
           <Button colorScheme="teal" type="submit" mr={"10px"}>
-            Submit
+            Register
           </Button>
         </Box>
       </form>
-      <Button colorScheme="teal" variant={"outline"} onClick={signInWithGoogle}>
-        Continue with Google
-      </Button>
+      <Box
+        w={"100%"}
+        display={"flex"}
+        flexDirection={"column"}
+        justifyContent={"center"}
+        alignItems={"center"}
+      >
+        <Button
+          colorScheme="teal"
+          variant={"outline"}
+          onClick={signInWithGoogle}
+        >
+          Continue with Google
+        </Button>
+        <Text>
+          Already Registered?
+          <Link style={{ color: "blue" }} to={"/login"}>
+            {" "}
+            Login Here
+          </Link>
+        </Text>
+      </Box>
     </Box>
   );
 };

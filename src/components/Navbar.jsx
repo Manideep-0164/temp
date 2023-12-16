@@ -1,25 +1,20 @@
-import { Box, Button, UnorderedList } from "@chakra-ui/react";
-import React, { useContext } from "react";
+import { Box, Button } from "@chakra-ui/react";
+import { useContext } from "react";
 
 import { Link } from "react-router-dom";
 import { AuthContext } from "../contexts/AuthContext";
 
 const linkStyles = {
-  color: "white",
-  backgroundColor: "blue",
   padding: "2px 4px",
   borderRadius: "5px",
-  width: "120px",
   textAlign: "center",
 };
 
 const Navbar = () => {
   const { logout, setSignUpStatus, signUpStatus } = useContext(AuthContext);
 
-  console.log(signUpStatus);
-
   const handleLogout = () => {
-    console.log("logout", signUpStatus);
+    console.log("logout Success");
     logout();
     setSignUpStatus(false);
   };
@@ -31,13 +26,27 @@ const Navbar = () => {
       justifyContent={"space-evenly"}
       p={"15px"}
       mb={"10px"}
+      w={"100%"}
+      m={"auto"}
     >
-      <Link style={linkStyles} to={"/"}>
-        Register
-      </Link>
-      <Link style={linkStyles} to={"/todo"}>
+      <Button>
+        <Link style={linkStyles} to={"/"}>
+          Register
+        </Link>
+      </Button>
+      <Button>
+        <Link style={linkStyles} to={"/todo"}>
+          Todo
+        </Link>
+      </Button>
+      <Button>
+        <Link style={linkStyles} to={"/form"}>
+          Form
+        </Link>
+      </Button>
+      {/* <Link style={linkStyles} to={"/todo"}>
         Todo
-      </Link>
+      </Link> */}
       {signUpStatus && <Button onClick={handleLogout}>Logout</Button>}
     </Box>
   );

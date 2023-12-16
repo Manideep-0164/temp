@@ -1,11 +1,11 @@
-import React, { useEffect, useContext, useState } from "react";
+import { useContext, useState } from "react";
 
 import { db } from "../configs/firebase";
-import { collection, addDoc } from "firebase/firestore";
+import { collection, addDoc, Timestamp } from "firebase/firestore";
 import { Box, Input, Button } from "@chakra-ui/react";
 import { AuthContext } from "../contexts/AuthContext";
 
-function TodoInput({ fetchTodos }) {
+function TodoInput({ fetchTodos, getUserName }) {
   const { user } = useContext(AuthContext);
   const [title, setTitle] = useState("");
 
@@ -16,8 +16,11 @@ function TodoInput({ fetchTodos }) {
       const todoItem = {
         title: title,
         status: false,
-        todoCreatedAt: new Date(),
+        todoCreatedAt: Timestamp.now(),
         author: user?.uid ? user.uid : null,
+        userName: user?.uid ? await getUserName(user) : null,
+        subTasks: [],
+        order: Timestamp.now(),
       };
 
       const todoCollectionRef = collection(db, "todos");
@@ -25,6 +28,7 @@ function TodoInput({ fetchTodos }) {
       await addDoc(todoCollectionRef, todoItem);
 
       fetchTodos();
+      console.log("bFrom add todo");
 
       setTitle("");
     } catch (error) {
