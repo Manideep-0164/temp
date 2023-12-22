@@ -1,11 +1,11 @@
 import { Box, Button } from "@chakra-ui/react";
 import { useContext } from "react";
 
-import { Link } from "react-router-dom";
+import { Link, Outlet } from "react-router-dom";
 import { AuthContext } from "../contexts/AuthContext";
 
 const linkStyles = {
-  padding: "2px 4px",
+  padding: "10px 25px",
   borderRadius: "5px",
   textAlign: "center",
 };
@@ -20,35 +20,35 @@ const Navbar = () => {
   };
 
   return (
-    <Box
-      borderBottom={"1px solid"}
-      display={"flex"}
-      justifyContent={"space-evenly"}
-      p={"15px"}
-      mb={"10px"}
-      w={"100%"}
-      m={"auto"}
-    >
-      <Button>
-        <Link style={linkStyles} to={"/"}>
-          Register
-        </Link>
-      </Button>
-      <Button>
-        <Link style={linkStyles} to={"/todo"}>
-          Todo
-        </Link>
-      </Button>
-      <Button>
-        <Link style={linkStyles} to={"/form"}>
-          Form
-        </Link>
-      </Button>
-      {/* <Link style={linkStyles} to={"/todo"}>
-        Todo
-      </Link> */}
-      {signUpStatus && <Button onClick={handleLogout}>Logout</Button>}
-    </Box>
+    <>
+      <Box
+        borderBottom={"1px solid"}
+        display={"flex"}
+        justifyContent={"space-evenly"}
+        p={"15px"}
+        mb={"10px"}
+        w={"100%"}
+        m={"auto"}
+      >
+        <Button m={0} p={0}>
+          <Link style={linkStyles} to={"/"}>
+            Register
+          </Link>
+        </Button>
+        <Button m={0} p={0}>
+          <Link style={linkStyles} to={"/todo"}>
+            Todo
+          </Link>
+        </Button>
+        <Button m={0} p={0}>
+          <Link style={linkStyles} to={"/form"}>
+            Form
+          </Link>
+        </Button>
+        {signUpStatus && <Button onClick={handleLogout}>Logout</Button>}
+      </Box>
+      <Outlet />
+    </>
   );
 };
 

@@ -5,19 +5,19 @@ import { db } from "../configs/firebase";
 import { Box, Checkbox, Text } from "@chakra-ui/react";
 
 const SubTask = (props) => {
-  const { task, formatDate, fetchSubTasks, todoId } = props;
+  const { task, formatDate, fetchSubTasks } = props;
   const { id, title, status, createdAt, userName } = task;
 
   const handleToggle = async () => {
     try {
-      const docRef = doc(db, `todos/${todoId}/SubTasks`, id);
+      const docRef = doc(db, `todos`, id);
       const updatedTask = {
         status: !status,
       };
       await updateDoc(docRef, updatedTask);
       fetchSubTasks();
     } catch (error) {
-      console.log("Error updating Sub Task:", error);
+      console.log("Error updating Sub Todo:", error);
     }
   };
 

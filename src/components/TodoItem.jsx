@@ -8,7 +8,8 @@ import {
   collection,
   addDoc,
   getDocs,
-  writeBatch,
+  query,
+  where,
 } from "firebase/firestore";
 import { db } from "../configs/firebase";
 import { Box, Text, Checkbox, Button, Input } from "@chakra-ui/react";
@@ -22,12 +23,16 @@ const TodoItem = ({
   getUserName,
   index,
   todos,
+  setNotificationData,
+  setNotificationStatus,
+  // subTodos,
   setTodos,
+  // setSubTodos,
 }) => {
-  const { id, title, status, todoCreatedAt, userName } = todo;
+  const { id, title, status, todoCreatedAt, userName, author } = todo;
   const { user } = useContext(AuthContext);
   const [taskTitle, setTaskTitle] = useState("");
-  const [subTaskData, setSubTaskData] = useState([]);
+  const [subTodos, setSubTodos] = useState([]);
 
   // format date like: (Month DD, Time/12HR)
   const formatDate = (date) => {
@@ -35,16 +40,21 @@ const TodoItem = ({
     return momentObject.format("MMM D, h:mm A");
   };
 
-  const handleToggle = async (cStatus = false, subTasksStatus = false) => {
+  const handleToggle = async (e, flag = false, subTodosStatus = false) => {
     try {
       const docRef = doc(db, "todos", id);
+      const updatedStatus = flag ? subTodosStatus : !status;
       const updatedTodo = {
-        status: cStatus ? subTasksStatus : !status,
+        status: updatedStatus,
       };
       await updateDoc(docRef, updatedTodo);
-      console.log("bFrom toggle");
       fetchTodos();
     } catch (error) {
+      if (error.code === "permission-denied") {
+        setNotificationStatus(true);
+        setNotificationData("You didn't have permission to edit other todos");
+        return;
+      }
       console.log("Error updating todo:", error);
     }
   };
@@ -57,16 +67,26 @@ const TodoItem = ({
 
       fetchTodos();
     } catch (error) {
+      if (error.code === "permission-denied") {
+        setNotificationStatus(true);
+        setNotificationData("You didn't have permission to edit other todos");
+        return;
+      }
       console.log("Error deleting todo:", error);
     }
   };
 
-  const fetchSubTasks = async (event) => {
+  const fetchSubTasks = async () => {
     try {
-      const subTaskCollectionRef = collection(db, `todos/${id}/SubTasks`);
-      const subTasksSnapshot = await getDocs(subTaskCollectionRef);
+      const subTaskCollectionRef = collection(db, `todos`);
+      const q = query(
+        subTaskCollectionRef,
+        where("type", "==", "child"),
+        where("isChildOf", "==", id)
+      );
+      const subTasksSnapshot = await getDocs(q);
       if (subTasksSnapshot.empty) {
-        setSubTaskData([]);
+        setSubTodos([]);
         return;
       }
 
@@ -75,25 +95,29 @@ const TodoItem = ({
         id: subTask.id,
       }));
 
-      const subTasksStatus = data.every((subTask) => subTask.status === true);
+      const subTodosStatus = data.every((subTodo) => subTodo.status === true);
 
-      // (status && !subTasksStatus) => if initially parent todo marked as true, then if we unTick any one of the subTask.
-      // if (subTasksStatus || (status && !subTasksStatus)) {
-      //   // event.stopPropagation();
+      if (subTodosStatus || (status && !subTodosStatus)) {
+        await handleToggle("", true, subTodosStatus);
+      }
 
-      //   console.log("fetchSubTask-invoking-handleToggle");
-      //   const cStatus = true;
-      //   handleToggle(cStatus, subTasksStatus);
-      // }
+      console.log("sub-todos", data);
 
-      setSubTaskData(data);
+      setSubTodos(data);
     } catch (error) {
-      console.log("Error fetching subTasks:", error);
+      console.log("Error fetching subTodos:", error);
     }
   };
 
   const addSubTask = async () => {
     if (!taskTitle) return;
+
+    if (user?.uid !== author) {
+      setNotificationStatus(true);
+      setNotificationData("You didn't have permission to edit other todos");
+      setTaskTitle("");
+      return;
+    }
 
     try {
       const taskData = {
@@ -102,15 +126,18 @@ const TodoItem = ({
         createdAt: Timestamp.now(),
         author: user?.uid ? user.uid : null,
         userName: user?.uid ? await getUserName(user) : null,
+        type: "child",
+        isParentOf: [],
+        isChildOf: id,
       };
 
-      const taskCollectionRef = collection(db, `todos/${id}/SubTasks`);
+      const taskCollectionRef = collection(db, `todos`);
       await addDoc(taskCollectionRef, taskData);
       fetchSubTasks();
 
       setTaskTitle("");
     } catch (error) {
-      console.log("Error adding task/updating todo:", error);
+      console.log("Error adding subTodo:", error);
     }
   };
 
@@ -124,19 +151,24 @@ const TodoItem = ({
 
     sortedTodos.splice(dropIndex, 0, draggedItem);
 
-    const batch = writeBatch(db);
+    // const batch = writeBatch(db);
     setTodos(sortedTodos);
 
-    sortedTodos.forEach((todo, index) => {
-      const todoColRef = collection(db, "todos");
-      const docRef = doc(todoColRef, todo.id);
-      batch.update(docRef, { order: index });
-    });
-
     try {
-      await batch.commit();
+      sortedTodos.forEach(async (todo, index) => {
+        const todoDocRef = doc(db, "todos", todo.id);
+        await updateDoc(todoDocRef, { order: index });
+      });
+
+      // sortedTodos.forEach((todo, index) => {
+      //   const todoColRef = collection(db, "todos");
+      //   const docRef = doc(todoColRef, todo.id);
+      //   batch.update(docRef, { order: index });
+      // });
+
+      // await batch.commit();
     } catch (error) {
-      console.log("Error updating batch:", error);
+      console.log("Error updating todos:", error);
     }
   };
 
@@ -151,7 +183,7 @@ const TodoItem = ({
   return (
     <Box
       className="draggable"
-      bgColor={"whitesmoke"}
+      border={"1px solid"}
       p={"5px"}
       borderRadius={"5px"}
       draggable
@@ -184,10 +216,11 @@ const TodoItem = ({
             user: {userName ? userName : "Unknown User"}
           </Text>
         </Box>
-        <Button colorScheme="red" variant={"solid"} onClick={handleDelete}>
+        <Button variant={"solid"} onClick={handleDelete}>
           Delete
         </Button>
       </Box>
+
       {/* Sub Task */}
       <Box
         display={"flex"}
@@ -214,6 +247,7 @@ const TodoItem = ({
           p={"5px"}
           m={"5px"}
           gap={"10px"}
+          border={"1px solid"}
           borderRadius={"5px"}
           boxShadow={
             "rgba(0, 0, 0, 0.05) 0px 6px 24px 0px, rgba(0, 0, 0, 0.08) 0px 0px 0px 1px;"
@@ -221,9 +255,9 @@ const TodoItem = ({
           h={"140px"}
           overflowY={"scroll"}
         >
-          {subTaskData.length === 0 && <Text>No Sub Tasks Available</Text>}
-          {subTaskData.length > 0 &&
-            subTaskData?.map((task) => (
+          {subTodos.length === 0 && <Text>No Sub Tasks Available</Text>}
+          {subTodos.length > 0 &&
+            subTodos?.map((task) => (
               <SubTask
                 key={task?.id}
                 task={task}

@@ -6,11 +6,13 @@ import { Box, Input, Button } from "@chakra-ui/react";
 import { AuthContext } from "../contexts/AuthContext";
 
 function TodoInput({ fetchTodos, getUserName }) {
-  const { user } = useContext(AuthContext);
+  const { user, token } = useContext(AuthContext);
   const [title, setTitle] = useState("");
 
   const handleClick = async () => {
     if (!title) return;
+
+    console.log("From Add Todo", token);
 
     try {
       const todoItem = {
@@ -19,9 +21,14 @@ function TodoInput({ fetchTodos, getUserName }) {
         todoCreatedAt: Timestamp.now(),
         author: user?.uid ? user.uid : null,
         userName: user?.uid ? await getUserName(user) : null,
-        subTasks: [],
         order: Timestamp.now(),
+        type: "parent",
+        isParentOf: [],
+        isChildOf: null,
+        // userAccessTKN: user?.accessToken ? user?.accessToken : null,
       };
+
+      console.log(todoItem);
 
       const todoCollectionRef = collection(db, "todos");
 
@@ -41,10 +48,11 @@ function TodoInput({ fetchTodos, getUserName }) {
       <Input
         type="text"
         placeholder="Todo title."
+        color={"brown.500"}
         value={title}
         onChange={(e) => setTitle(e.target.value)}
       />
-      <Button colorScheme="green" variant={"solid"} onClick={handleClick}>
+      <Button bgColor="brown.500" variant={"solid"} onClick={handleClick}>
         Add Todo
       </Button>
     </Box>
